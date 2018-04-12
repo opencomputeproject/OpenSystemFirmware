@@ -1,11 +1,14 @@
 ﻿![Open Compute Project](https://github.com/opencomputeproject/OSF/blob/master/Open%20Compute%20Project%20Logo.png)
 
-
-
 **Open System Firmware Requirements
 Version-0.3**
 
-**Reference to other docs (deeper dive from these principals)**
+&nbsp;
+&nbsp;
+&nbsp;
+
+
+## **Reference to other docs (deeper dive from these principals)**
 
 Trammell’s manifesto
 
