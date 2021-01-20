@@ -15,11 +15,15 @@ This repository holds software contributions for OSF.
 
 | Location | Description |
 | -------- | ----------- |
-| `[vendor_name]/[product_name]/[version]/` | Directory of OSF product |
-| `[vendor_name]/[product_name]/[version]/LICENSE` | License for this directory |
-| `[vendor_name]/[product_name]/[version]/Makefile` | Script to build OSF product |
-| `[vendor_name]/[product_name]/[version]/src/` | Directory for source files |
-| `[vendor_name]/[product_name]/[version]/bin/` | Directory for binary files |
+| `[vendor_name]/[product_name]/` | Directory of OSF product |
+| `[vendor_name]/[product_name]/LICENSE` | License for this directory |
+| `[vendor_name]/[product_name]/Makefile` | Script to build OSF product |
+| `[vendor_name]/[product_name]/src/` | Directory for source files |
+| `[vendor_name]/[product_name]/bin/` | Directory for binary files |
+
+Optionally, `[product_name]/` can have a `[product_version]/` subdirectory in case
+there are multiple versions or revisions of the product's hardware with incompatible
+firmware.
 
 See [Open System Firmware Checklist](https://www.opencompute.org/wiki/Open_System_Firmware/Checklist) for
 submission process.
