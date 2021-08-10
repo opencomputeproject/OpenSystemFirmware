@@ -4,6 +4,10 @@ GOLANG_URL="https://golang.org/dl/go1.15.14.linux-amd64.tar.gz"
 
 echo "Fetching dependencies"
 
+if [ ! -d "src" ]; then                                                   
+    mkdir src                                                             
+fi 
+
 pushd src
 
 if [ ! -d "initramfs" ]; then
