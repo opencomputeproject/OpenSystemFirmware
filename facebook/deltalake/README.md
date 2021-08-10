@@ -15,6 +15,16 @@ It should look like this:
 
 ![bin/deltalake folder](bin/deltalake/binaries.png)
 
+## Dependencies
+
+The following build dependencies are needed:
+
+`sudo apt-get install -y bison build-essential curl flex git gnat libncurses5-dev m4 zlib1g-dev`
+
+Dependencies have been taken from [coreboot](https://doc.coreboot.org/tutorial/part1.html)
+
+## Build the Image
+
 Once the files have been placed in the binary folder, the build can be started
 with executing `make`. `make clean` cleans up all artifacts. The generated
 firmware image can be found under `src/coreboot/build/coreboot.rom`.

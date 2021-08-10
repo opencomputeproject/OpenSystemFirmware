@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 GOLANG_URL="https://golang.org/dl/go1.15.14.linux-amd64.tar.gz"
 
@@ -15,6 +15,7 @@ if [ ! -d "initramfs" ]; then
 fi
 
 pushd initramfs
+
 if [ ! -d "go" ]; then
     wget "${GOLANG_URL}"
     tar -xf go1.15.14.linux-amd64.tar.gz
@@ -22,6 +23,7 @@ fi
 
 export GOROOT="${PWD}/go"
 export GOPATH="${PWD}/gopath"
+export PATH="${PATH}:${PWD}/go/bin"
 
 if [ ! -d "gopath" ]; then
     mkdir gopath

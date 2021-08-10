@@ -1,4 +1,4 @@
 all:
-	/bin/sh build.sh
+	/bin/bash build.sh
 clean:
 	rm -rf src/*
