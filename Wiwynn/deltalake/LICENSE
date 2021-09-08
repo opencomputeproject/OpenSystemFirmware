@@ -1,0 +1,24 @@
+This software and associated documentation files (the "Software") are contributed to the
+Open Compute Project and are subject to the license terms of the Open Compute Project
+(OCP) Software Contributor License Agreement listed at the following address:
+https://www.opencompute.org/documents/software-contributor-license-agreement.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
+FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS
+OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
+WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+The Software incorporates third-party software listed below. The provisions contained in each
+such license apply only to the respective third-party software.
+
+1.      coreboot (https://github.com/coreboot/coreboot/blob/master/COPYING)
+2.      Linux Kernel (https://github.com/torvalds/linux/blob/master/COPYING)
+3.      u-root (https://github.com/u-root/u-root/blob/master/LICENSE)
+4.      Intel FSP (https://github.com/intel/FSP/blob/master/FSP_License.pdf)
+5.      Intel PCH Ignition Firmware and Flash descriptor for Delta Lake
+        (https://github.com/tianocore/edk2-non-osi/blob/master/Platform/Intel/WhitleyOpenBoardBinPkg/Ifwi/DeltaLake/License.txt)
+6.      Intel microcode (https://github.com/tianocore/edk2-non-osi/blob/master/Silicon/Intel/WhitleySiliconBinPkg/CpxMicrocode/IntelMicrocodeLicense.txt)
+7.      Go (https://github.com/golang/go/blob/master/LICENSE)
+8.      osf-builder (https://github.com/facebookincubator/osf-builder/blob/main/LICENSE)
