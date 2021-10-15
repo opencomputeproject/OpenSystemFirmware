@@ -37,7 +37,7 @@ download_intel_blobs()
 download_intel_blobs
 # Download osf-builder under src
 cd src
-git clone https://github.com/facebookincubator/osf-builder.git
+git clone https://github.com/linuxboot/osf-builder.git
 cd osf-builder
 git checkout $osf_builder_hash
 # Apply patches that add Delta Lake files to osf-builder

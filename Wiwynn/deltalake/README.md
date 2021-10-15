@@ -14,7 +14,7 @@ The open system firmware solution developed for Delta Lake is based on [coreboot
 
     cd Wiwynn/deltalake && ./download_and_build.sh
 
-The download_and_build.sh shell script will clone the necessary repositories and trigger the build process. The [osf-builder](https://github.com/facebookincubator/osf-builder) describes more detail about the fetching and building process for coreboot and LinuxBoot. A built firmware image following the build steps is placed under bin/osf-deltalake.rom.
+The download_and_build.sh shell script will clone the necessary repositories and trigger the build process. The [osf-builder](https://github.com/linuxboot/osf-builder) describes more detail about the fetching and building process for coreboot and LinuxBoot. A built firmware image following the build steps is placed under bin/osf-deltalake.rom.
 
 ## Documentation
 
