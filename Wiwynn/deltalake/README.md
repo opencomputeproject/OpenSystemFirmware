@@ -32,7 +32,7 @@ The [document](https://github.com/coreboot/coreboot/blob/master/Documentation/ma
 
 ## How To Buy OCP Delta Lake
 
-In the near future Yosemite-V3 can be found in [Open Compute Project Marketplace](https://www.opencompute.org/solutions), if you are interested please contact [Wiwynn](https://www.wiwynn.com/contact-wiwynn/).
+Yosemite V3 can be found in [Open Compute Project Marketplace](https://www.opencompute.org/products/423/wiwynn-wirack21-yosemite-v3-server), if you are interested please contact [Wiwynn](https://www.wiwynn.com/contact-wiwynn/).
 
 ## Potential Gaps To Use OCP Delta Lake OSF in Production
  * Intel CBnT. CBnT 0T support is in coreboot, but overall solution requires Intel ACM binaries which are available under Intel agreement. 
