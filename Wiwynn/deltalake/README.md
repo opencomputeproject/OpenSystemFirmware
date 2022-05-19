@@ -30,9 +30,9 @@ The [document](https://github.com/coreboot/coreboot/blob/master/Documentation/ma
     - vpdbootmanager set [variable name] [variable value]
     - vpdbootmanager delete [variable name]
 
-## How To Buy OCP Delta Lake
+## How To Access OCP Delta Lake
 
-Yosemite V3 can be found in [Open Compute Project Marketplace](https://www.opencompute.org/products/423/wiwynn-wirack21-yosemite-v3-server), if you are interested please contact [Wiwynn](https://www.wiwynn.com/contact-wiwynn/).
+OCP DeltaLake servers could be accessed remotely through OCP Community Lab. The physical servers could also be obtained through special arrangements. Please contact OCP OSF project leads as necessary.
 
 ## Potential Gaps To Use OCP Delta Lake OSF in Production
  * Intel CBnT. CBnT 0T support is in coreboot, but overall solution requires Intel ACM binaries which are available under Intel agreement. 
