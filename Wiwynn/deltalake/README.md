@@ -9,6 +9,7 @@ The open system firmware solution developed for Delta Lake is based on [coreboot
  * Linux OS
  * GNU Make
  * python
+ * [Install tools and libraries needed for coreboot](https://doc.coreboot.org/tutorial/part1.html#step-1-install-tools-and-libraries-needed-for-coreboot)
 
 ## How To Build
 
