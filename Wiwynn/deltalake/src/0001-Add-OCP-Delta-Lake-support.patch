@@ -61,7 +61,7 @@ new file mode 100644
 index 0000000..2d9fb07
 --- /dev/null
 +++ b/projects/deltalake/configs/config-deltalake.json
-@@ -0,0 +1,80 @@
+@@ -0,0 +1,87 @@
 +{
 +  "initramfs": {
 +    "untar": [
@@ -96,14 +96,14 @@ index 0000000..2d9fb07
 +        "label": "coreboot",
 +        "url": "https://review.coreboot.org/coreboot",
 +        "branch": "master",
-+        "hash": "a8dac049b1cce95635c4e8c786af861f24eb2fb5"
++        "hash": "1df1cf994aa9ebdd9d51103d2d618f6aa66df2d6"
 +      },
 +      {
 +        "label": "vboot",
 +        "url": "https://review.coreboot.org/vboot",
 +        "dest": "3rdparty/vboot",
 +        "branch": "master",
-+        "hash": "e681c371484b50c0cc35d91123b176acdc2449eb"
++        "hash": "b827ddb9b02228fc8064d7e03bdc6f05535d5e03"
 +      }
 +    ],
 +    "files": {
@@ -123,20 +123,20 @@ index 0000000..2d9fb07
 +          "hash": "sha256:17503d2c395dfcf106b622dc142683c1199431d095367c6aacba6eec30340459"
 +        },
 +        {
-+          "url": "https://ftpmirror.gnu.org/binutils/binutils-2.35.1.tar.xz",
-+          "hash": "sha256:3ced91db9bf01182b7e420eab68039f2083aed0a214c0424e257eae3ddee8607"
++          "url": "https://ftpmirror.gnu.org/binutils/binutils-2.37.tar.xz",
++          "hash": "sha256:820d9724f020a3e69cb337893a0b63c2db161dadcb0e06fc11dc29eb1e84a32c"
 +        },
 +        {
-+          "url": "https://ftpmirror.gnu.org/gcc/gcc-8.3.0/gcc-8.3.0.tar.xz",
-+          "hash": "sha256:64baadfe6cc0f4947a84cb12d7f0dfaf45bb58b7e92461639596c21e02d97d2c"
++          "url": "https://ftpmirror.gnu.org/gcc/gcc-11.2.0/gcc-11.2.0.tar.xz",
++          "hash": "sha256:d08edc536b54c372a1010ff6619dd274c0f1603aa49212ba20f7aa2cda36fa8b"
 +        },
 +        {
 +          "url": "https://www.nasm.us/pub/nasm/releasebuilds/2.15.05/nasm-2.15.05.tar.bz2",
 +          "hash": "sha256:3c4b8339e5ab54b1bcb2316101f8985a5da50a3f9e504d43fa6f35668bee2fd0"
 +        },
 +        {
-+          "url": "https://acpica.org/sites/acpica/files/acpica-unix2-20210331.tar.gz",
-+          "hash": "sha256:3dab326c262d4f3eaf380bbbbd7aa8c2eb5f2697f7821659222cf898d8be28c1"
++          "url": "https://acpica.org/sites/acpica/files/acpica-unix2-20220331.tar.gz",
++          "hash": "sha256:1ccda5c6a08a90b145777df635eb09f995b3472b3128f375009c5a6b01a04c7a"
 +        }
 +      ]
 +    }
