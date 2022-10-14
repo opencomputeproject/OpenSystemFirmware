@@ -67,16 +67,16 @@ index 0000000..2d9fb07
 +    "untar": [
 +      {
 +        "label": "go",
-+        "url": "https://golang.org/dl/go1.16.6.linux-amd64.tar.gz",
-+        "hash": "sha256:be333ef18b3016e9d7cb7b1ff1fdb0cac800ca0be4cf2290fe613b3d069dfe0d"
++        "url": "https://golang.org/dl/go1.17.1.linux-amd64.tar.gz",
++        "hash": "sha256:dab7d9c34361dc21ec237d584590d72500652e7c909bf082758fb63064fca0ef"
 +      }
 +    ],
 +    "goget": [
 +      {
 +        "label": "uroot",
 +        "pkg": "https://github.com/u-root/u-root",
-+        "branch": "master",
-+        "hash": "6be1534c07b272bde925da48c2bde72ff5c69a2c"
++        "branch": "main",
++        "hash": "5476b3dd5012689338b314d850a43895ddf656c1"
 +      }
 +    ]
 +  },
