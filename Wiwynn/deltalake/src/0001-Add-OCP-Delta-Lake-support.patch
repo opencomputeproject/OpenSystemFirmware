@@ -104,6 +104,13 @@ index 0000000..2d9fb07
 +        "dest": "3rdparty/vboot",
 +        "branch": "master",
 +        "hash": "b827ddb9b02228fc8064d7e03bdc6f05535d5e03"
++      },
++      {
++        "label": "fsp",
++        "url": "https://review.coreboot.org/fsp",
++        "dest": "3rdparty/fsp",
++        "branch": "master",
++        "hash": "13a144fd138e1c192471fe2e74416ca9a5c0e78e"
 +      }
 +    ],
 +    "files": {
