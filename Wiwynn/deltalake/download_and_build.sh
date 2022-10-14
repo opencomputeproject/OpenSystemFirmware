@@ -3,7 +3,7 @@
 scriptdir="$(realpath "$(dirname "$0")")"
 osf_builder_hash="4f7836a3a8d1181fdc3444bfc1ea72b56de3e625"
 fsp_hash="0e18518131e7ecfeeb4afeab306121ca554c5054"
-edk2_non_osi_hash="eba85cf5d882340b2ce0f845facc31dde0c3dbcb"
+edk2_non_osi_hash="61662e8596dd9a64e3372f9a3ba6622d2628607c"
 
 patches="${scriptdir}/src/*.patch"
 
