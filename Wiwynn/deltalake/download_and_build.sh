@@ -1,7 +1,7 @@
 #!/bin/bash
 
 scriptdir="$(realpath "$(dirname "$0")")"
-osf_builder_hash="4f7836a3a8d1181fdc3444bfc1ea72b56de3e625"
+osf_builder_hash="11d894bfe70e9b371c7dba9a02c6ccb24bd0c524"
 fsp_hash="0e18518131e7ecfeeb4afeab306121ca554c5054"
 edk2_non_osi_hash="61662e8596dd9a64e3372f9a3ba6622d2628607c"
 
