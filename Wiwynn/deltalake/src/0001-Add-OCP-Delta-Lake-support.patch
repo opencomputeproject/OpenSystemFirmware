@@ -84,9 +84,9 @@ index 0000000..2d9fb07
 +    "untar": [
 +      {
 +        "label": "kernel",
-+        "url": "https://git.kernel.org/pub/scm/linux/kernel/git/stable/linux.git/snapshot/linux-5.10.50.tar.gz",
-+        "hash": "sha256:81338158ebc77b35e426e1c47826458dada4e8500030553ef911e6cf729817de",
-+        "subdir": "linux-5.10.50"
++        "url": "https://git.kernel.org/pub/scm/linux/kernel/git/stable/linux.git/snapshot/linux-5.15.86.tar.gz",
++        "hash": "sha256:b7b0d3b776ade96e837353bd43579a27f04e7b6c3fe9748d004db91d772d9f74",
++        "subdir": "linux-5.15.86"
 +      }
 +    ]
 +  },
