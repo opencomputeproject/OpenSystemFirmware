@@ -1,0 +1,203 @@
+From aa95c79c33b4fb454d6d13991cee2550f554a488 Mon Sep 17 00:00:00 2001
+From: Timofei Nikitin <tim.a.nikitin@yandex.ru>
+Date: Sun, 6 Nov 2022 00:13:06 +0300
+Subject: [PATCH] SecureBoot enabled
+
+---
+ .../BoardTiogaPass/OpenBoardPkg.dsc           |  12 ++
+ .../BoardTiogaPass/PlatformPkgConfig.dsc      | 130 +++++++++---------
+ .../BoardTiogaPass/PlatformPkgPcd.dsc         |   7 +-
+ 3 files changed, 83 insertions(+), 66 deletions(-)
+
+diff --git a/Platform/Intel/PurleyOpenBoardPkg/BoardTiogaPass/OpenBoardPkg.dsc b/Platform/Intel/PurleyOpenBoardPkg/BoardTiogaPass/OpenBoardPkg.dsc
+index 5747717ecb..2db704d34d 100644
+--- a/Platform/Intel/PurleyOpenBoardPkg/BoardTiogaPass/OpenBoardPkg.dsc
++++ b/Platform/Intel/PurleyOpenBoardPkg/BoardTiogaPass/OpenBoardPkg.dsc
+@@ -193,6 +193,14 @@
+   $(PLATFORM_PACKAGE)/PlatformInit/SiliconPolicyPei/SiliconPolicyPeiPreMem.inf
+   $(PLATFORM_PACKAGE)/PlatformInit/SiliconPolicyPei/SiliconPolicyPeiPostMem.inf
+ 
++    !if gMinPlatformPkgTokenSpaceGuid.PcdTpm2Enable == TRUE
++    $(PLATFORM_PACKAGE)/Tcg/Tcg2PlatformPei/Tcg2PlatformPei.inf
++    SecurityPkg/Tcg/Tcg2Pei/Tcg2Pei.inf {
++      <LibraryClasses>
++        ResetSystemLib|edk2/MdeModulePkg/Library/BaseResetSystemLibNull/BaseResetSystemLibNull.inf
++    }
++  !endif
++
+ [Components.X64]
+ 
+   $(PLATFORM_SI_BIN_PACKAGE)/FV/FvLateSilicon/$(TARGET)/FvLateSilicon.inf
+@@ -254,3 +262,7 @@
+ !if gSmbiosFeaturePkgTokenSpaceGuid.PcdSmbiosFeatureEnable == TRUE
+   MdeModulePkg/Universal/SmbiosDxe/SmbiosDxe.inf
+ !endif
++
++!if gMinPlatformPkgTokenSpaceGuid.PcdTpm2Enable == TRUE
++  $(PLATFORM_PACKAGE)/Tcg/Tcg2PlatformDxe/Tcg2PlatformDxe.inf
++!endif
+\ No newline at end of file
+diff --git a/Platform/Intel/PurleyOpenBoardPkg/BoardTiogaPass/PlatformPkgConfig.dsc b/Platform/Intel/PurleyOpenBoardPkg/BoardTiogaPass/PlatformPkgConfig.dsc
+index cefb81b76e..63b67f4a4d 100644
+--- a/Platform/Intel/PurleyOpenBoardPkg/BoardTiogaPass/PlatformPkgConfig.dsc
++++ b/Platform/Intel/PurleyOpenBoardPkg/BoardTiogaPass/PlatformPkgConfig.dsc
+@@ -1,65 +1,65 @@
+-## @file
+-#
+-# Copyright (c) 2018, Intel Corporation. All rights reserved.<BR>
+-# Copyright (c) 2021, American Megatrends International LLC.<BR>
+-# SPDX-License-Identifier: BSD-2-Clause-Patent
+-#
+-##
+-
+-#
+-# TRUE is ENABLE. FALSE is DISABLE.
+-#
+-
+-[PcdsFixedAtBuild]
+-  gMinPlatformPkgTokenSpaceGuid.PcdBootStage|4
+-
+-[PcdsFeatureFlag]
+-  gMinPlatformPkgTokenSpaceGuid.PcdStopAfterDebugInit|FALSE
+-  gMinPlatformPkgTokenSpaceGuid.PcdStopAfterMemInit|FALSE
+-  gMinPlatformPkgTokenSpaceGuid.PcdBootToShellOnly|FALSE
+-  gMinPlatformPkgTokenSpaceGuid.PcdUefiSecureBootEnable|FALSE
+-  gMinPlatformPkgTokenSpaceGuid.PcdTpm2Enable|FALSE
+-
+-!if gMinPlatformPkgTokenSpaceGuid.PcdBootStage >= 1
+-  gMinPlatformPkgTokenSpaceGuid.PcdStopAfterDebugInit|TRUE
+-!endif
+-
+-!if gMinPlatformPkgTokenSpaceGuid.PcdBootStage >= 2
+-  gMinPlatformPkgTokenSpaceGuid.PcdStopAfterDebugInit|FALSE
+-  gMinPlatformPkgTokenSpaceGuid.PcdStopAfterMemInit|TRUE
+-!endif
+-
+-!if gMinPlatformPkgTokenSpaceGuid.PcdBootStage >= 3
+-  gMinPlatformPkgTokenSpaceGuid.PcdStopAfterMemInit|FALSE
+-  gMinPlatformPkgTokenSpaceGuid.PcdBootToShellOnly|TRUE
+-!endif
+-
+-!if gMinPlatformPkgTokenSpaceGuid.PcdBootStage >= 4
+-  gMinPlatformPkgTokenSpaceGuid.PcdBootToShellOnly|FALSE
+-!endif
+-
+-!if gMinPlatformPkgTokenSpaceGuid.PcdBootStage >= 5
+-  gMinPlatformPkgTokenSpaceGuid.PcdUefiSecureBootEnable|TRUE
+-  gMinPlatformPkgTokenSpaceGuid.PcdTpm2Enable|TRUE
+-!endif
+-
+-  !if $(TARGET) == DEBUG
+-    gMinPlatformPkgTokenSpaceGuid.PcdSmiHandlerProfileEnable|TRUE
+-  !else
+-    gMinPlatformPkgTokenSpaceGuid.PcdSmiHandlerProfileEnable|FALSE
+-  !endif
+-
+-  gMinPlatformPkgTokenSpaceGuid.PcdPerformanceEnable|TRUE
+-
+-  gPlatformTokenSpaceGuid.PcdLinuxBootEnable|FALSE
+-
+-!if gPlatformTokenSpaceGuid.PcdLinuxBootEnable == TRUE
+-  gPlatformTokenSpaceGuid.PcdFastBoot|TRUE
+-!else
+-  gPlatformTokenSpaceGuid.PcdFastBoot|FALSE
+-!endif
+-
+-!if gPlatformTokenSpaceGuid.PcdFastBoot == TRUE
+-  gIpmiFeaturePkgTokenSpaceGuid.PcdIpmiFeatureEnable|FALSE
+-  gPlatformTokenSpaceGuid.PcdUpdateConsoleInBds|FALSE
+-!endif
+\ No newline at end of file
++## @file
++#
++# Copyright (c) 2018, Intel Corporation. All rights reserved.<BR>
++# Copyright (c) 2021, American Megatrends International LLC.<BR>
++# SPDX-License-Identifier: BSD-2-Clause-Patent
++#
++##
++
++#
++# TRUE is ENABLE. FALSE is DISABLE.
++#
++
++[PcdsFixedAtBuild]
++  gMinPlatformPkgTokenSpaceGuid.PcdBootStage|5
++
++[PcdsFeatureFlag]
++  gMinPlatformPkgTokenSpaceGuid.PcdStopAfterDebugInit|FALSE
++  gMinPlatformPkgTokenSpaceGuid.PcdStopAfterMemInit|FALSE
++  gMinPlatformPkgTokenSpaceGuid.PcdBootToShellOnly|FALSE
++  gMinPlatformPkgTokenSpaceGuid.PcdUefiSecureBootEnable|FALSE
++  gMinPlatformPkgTokenSpaceGuid.PcdTpm2Enable|FALSE
++
++!if gMinPlatformPkgTokenSpaceGuid.PcdBootStage >= 1
++  gMinPlatformPkgTokenSpaceGuid.PcdStopAfterDebugInit|TRUE
++!endif
++
++!if gMinPlatformPkgTokenSpaceGuid.PcdBootStage >= 2
++  gMinPlatformPkgTokenSpaceGuid.PcdStopAfterDebugInit|FALSE
++  gMinPlatformPkgTokenSpaceGuid.PcdStopAfterMemInit|TRUE
++!endif
++
++!if gMinPlatformPkgTokenSpaceGuid.PcdBootStage >= 3
++  gMinPlatformPkgTokenSpaceGuid.PcdStopAfterMemInit|FALSE
++  gMinPlatformPkgTokenSpaceGuid.PcdBootToShellOnly|TRUE
++!endif
++
++!if gMinPlatformPkgTokenSpaceGuid.PcdBootStage >= 4
++  gMinPlatformPkgTokenSpaceGuid.PcdBootToShellOnly|FALSE
++!endif
++
++!if gMinPlatformPkgTokenSpaceGuid.PcdBootStage >= 5
++  gMinPlatformPkgTokenSpaceGuid.PcdUefiSecureBootEnable|TRUE
++  gMinPlatformPkgTokenSpaceGuid.PcdTpm2Enable|TRUE
++!endif
++
++  !if $(TARGET) == DEBUG
++    gMinPlatformPkgTokenSpaceGuid.PcdSmiHandlerProfileEnable|TRUE
++  !else
++    gMinPlatformPkgTokenSpaceGuid.PcdSmiHandlerProfileEnable|FALSE
++  !endif
++
++  gMinPlatformPkgTokenSpaceGuid.PcdPerformanceEnable|TRUE
++
++  gPlatformTokenSpaceGuid.PcdLinuxBootEnable|FALSE
++
++!if gPlatformTokenSpaceGuid.PcdLinuxBootEnable == TRUE
++  gPlatformTokenSpaceGuid.PcdFastBoot|TRUE
++!else
++  gPlatformTokenSpaceGuid.PcdFastBoot|FALSE
++!endif
++
++!if gPlatformTokenSpaceGuid.PcdFastBoot == TRUE
++  gIpmiFeaturePkgTokenSpaceGuid.PcdIpmiFeatureEnable|FALSE
++  gPlatformTokenSpaceGuid.PcdUpdateConsoleInBds|FALSE
++!endif
+diff --git a/Platform/Intel/PurleyOpenBoardPkg/BoardTiogaPass/PlatformPkgPcd.dsc b/Platform/Intel/PurleyOpenBoardPkg/BoardTiogaPass/PlatformPkgPcd.dsc
+index bed0625df9..f297224d3f 100644
+--- a/Platform/Intel/PurleyOpenBoardPkg/BoardTiogaPass/PlatformPkgPcd.dsc
++++ b/Platform/Intel/PurleyOpenBoardPkg/BoardTiogaPass/PlatformPkgPcd.dsc
+@@ -25,7 +25,7 @@
+   # Stage 5 - boot to OS with security boot enabled
+   # Stage 6 - boot with advanced features enabled
+   #
+-  gMinPlatformPkgTokenSpaceGuid.PcdBootStage|4
++  gMinPlatformPkgTokenSpaceGuid.PcdBootStage|5
+ 
+ [PcdsFeatureFlag.common]
+   gPlatformTokenSpaceGuid.PcdLockCsrSsidSvidRegister|FALSE
+@@ -375,6 +375,11 @@
+ 
+   gMinPlatformPkgTokenSpaceGuid.PcdPcIoApicEnable|0x0
+ 
++  !if gMinPlatformPkgTokenSpaceGuid.PcdBootStage >= 5
++    gEfiSecurityPkgTokenSpaceGuid.PcdTpmInstanceGuid|{0x5a, 0xf2, 0x6b, 0x28, 0xc3, 0xc2, 0x8c, 0x40, 0xb3, 0xb4, 0x25, 0xe6, 0x75, 0x8b, 0x73, 0x17}
++    gEfiSecurityPkgTokenSpaceGuid.PcdTpmInitializationPolicy|0
++  !endif
++
+ [PcdsDynamicExDefault.X64]
+ 
+   gEfiMdePkgTokenSpaceGuid.PcdUartDefaultBaudRate|115200
+-- 
+2.38.1.windows.1
+

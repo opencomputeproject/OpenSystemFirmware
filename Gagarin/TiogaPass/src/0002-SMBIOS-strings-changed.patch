@@ -1,0 +1,45 @@
+From 42a639f830c22bad68df71c8b7d859cdeaa5bc94 Mon Sep 17 00:00:00 2001
+From: Timofei Nikitin <tim.a.nikitin@yandex.ru>
+Date: Sun, 6 Nov 2022 01:17:36 +0300
+Subject: [PATCH] SMBIOS strings changed
+
+---
+ .../BoardTiogaPass/PlatformPkgPcd.dsc         | 22 +++++++++++++++++++
+ 1 file changed, 22 insertions(+)
+
+diff --git a/Platform/Intel/PurleyOpenBoardPkg/BoardTiogaPass/PlatformPkgPcd.dsc b/Platform/Intel/PurleyOpenBoardPkg/BoardTiogaPass/PlatformPkgPcd.dsc
+index f297224d3f..7fd30f1b7e 100644
+--- a/Platform/Intel/PurleyOpenBoardPkg/BoardTiogaPass/PlatformPkgPcd.dsc
++++ b/Platform/Intel/PurleyOpenBoardPkg/BoardTiogaPass/PlatformPkgPcd.dsc
+@@ -109,6 +109,28 @@
+ 
+ [PcdsDynamicExDefault]
+ !include $(PROJECT)/StructureConfig.dsc
++  #
++  # SMBIOS Type 0 BIOS Information Strings
++  #
++  gSmbiosFeaturePkgTokenSpaceGuid.PcdSmbiosType0StringBiosReleaseDate|"11/01/2022"
++  gSmbiosFeaturePkgTokenSpaceGuid.PcdSmbiosType0StringBiosVersion|"GAGAR>N 0.1.2"
++  gSmbiosFeaturePkgTokenSpaceGuid.PcdSmbiosType0StringVendor|"GAGAR>N"
++    #
++  # SMBIOS Type 1 System Information Strings
++  #
++  gSmbiosFeaturePkgTokenSpaceGuid.PcdSmbiosType1StringManufacturer|"GAGAR>N"
++  gSmbiosFeaturePkgTokenSpaceGuid.PcdSmbiosType1StringProductName|"Tioga Pass Single Side"
++
++  #
++  # SMBIOS Type 2 Base Board Information Strings
++  #
++  gSmbiosFeaturePkgTokenSpaceGuid.PcdSmbiosType2StringManufacturer|"GAGAR>N"
++  gSmbiosFeaturePkgTokenSpaceGuid.PcdSmbiosType2StringProductName|"Tioga Pass Single Side"
++
++  #
++  # SMBIOS Type 3 System Enclosure Chassis Strings
++  #
++  gSmbiosFeaturePkgTokenSpaceGuid.PcdSmbiosType3StringManufacturer|"GAGAR>N"
+ 
+ [PcdsFixedAtBuild.X64]
+   gMinPlatformPkgTokenSpaceGuid.PcdTrustedConsoleOutputDevicePath|{0x02, 0x01, 0x0C, 0x00, 0xd0, 0x41, 0x03, 0x0A, 0x01, 0x00, 0x00, 0x00, 0x01, 0x01, 0x06, 0x00,  0x00, 0x01, 0x01, 0x01, 0x06, 0x00,  0x00, 0x01, 0x7F, 0xFF, 0x04, 0x00}
+-- 
+2.38.1.windows.1
+

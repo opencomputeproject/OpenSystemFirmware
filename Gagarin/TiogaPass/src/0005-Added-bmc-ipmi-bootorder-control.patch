@@ -1,0 +1,795 @@
+From 70d5c6051dc0a165d188a2283de3f3d5d65867e3 Mon Sep 17 00:00:00 2001
+From: tkopytsa <t.kopytsa@gagarin.me>
+Date: Sun, 12 Feb 2023 13:42:01 +0000
+Subject: [PATCH] Added bmc ipmi bootorder control
+
+---
+ .../Intel/PurleyOpenBoardPkg/OpenBoardPkg.dec |   1 +
+ .../MdeModulePkg/Universal/BdsDxe/BdsDxe.inf  |  10 +-
+ .../MdeModulePkg/Universal/BdsDxe/BdsEntry.c  |  15 +
+ .../Universal/BdsDxe/BmcConfigBootLib.c       | 544 ++++++++++++++++++
+ .../Universal/BdsDxe/BmcIpmiBoot.c            | 131 +++++
+ 5 files changed, 700 insertions(+), 1 deletion(-)
+ create mode 100644 Platform/Intel/PurleyOpenBoardPkg/Override/MdeModulePkg/Universal/BdsDxe/BmcConfigBootLib.c
+ create mode 100644 Platform/Intel/PurleyOpenBoardPkg/Override/MdeModulePkg/Universal/BdsDxe/BmcIpmiBoot.c
+
+diff --git a/Platform/Intel/PurleyOpenBoardPkg/OpenBoardPkg.dec b/Platform/Intel/PurleyOpenBoardPkg/OpenBoardPkg.dec
+index 0c1ab318b8..8c3660e123 100644
+--- a/Platform/Intel/PurleyOpenBoardPkg/OpenBoardPkg.dec
++++ b/Platform/Intel/PurleyOpenBoardPkg/OpenBoardPkg.dec
+@@ -27,6 +27,7 @@
+   gOemSkuTokenSpaceGuid                               = { 0x9e37d253, 0xabf8, 0x4985, { 0x8e, 0x23, 0xba, 0xca, 0x10, 0x39, 0x56, 0x13 } }
+   gEfiIpmiPkgTokenSpaceGuid                           = { 0xe96431d, 0xc68e, 0x4212, { 0xa1, 0x70, 0x16, 0xa6, 0x8, 0x55, 0x12, 0xc6 } }
+   gPlatformTokenSpaceGuid                             = { 0x07dfa0d2, 0x2ac5, 0x4cab, { 0xac, 0x14, 0x30, 0x5c, 0x62, 0x48, 0x87, 0xe4 } }
++  gOemBootVariableGuid                                = { 0xb7784577, 0x5aaf, 0x4557, { 0xa1, 0x99, 0xd4, 0xa4, 0x2f, 0x45, 0x06, 0xf8 } }
+ 
+ [Ppis]
+   gEfiPeiSystemBoardPpiGuid                           = { 0xc8d85e8c, 0xdc1c, 0x4f8c, { 0xad, 0xa7, 0x58, 0xc1, 0xd1, 0x07, 0xa3, 0x04 } }
+diff --git a/Platform/Intel/PurleyOpenBoardPkg/Override/MdeModulePkg/Universal/BdsDxe/BdsDxe.inf b/Platform/Intel/PurleyOpenBoardPkg/Override/MdeModulePkg/Universal/BdsDxe/BdsDxe.inf
+index 56f689a61b..6dae761b8b 100644
+--- a/Platform/Intel/PurleyOpenBoardPkg/Override/MdeModulePkg/Universal/BdsDxe/BdsDxe.inf
++++ b/Platform/Intel/PurleyOpenBoardPkg/Override/MdeModulePkg/Universal/BdsDxe/BdsDxe.inf
+@@ -32,11 +32,14 @@
+   HwErrRecSupport.h
+   Language.c
+   BdsEntry.c
+-
++  BmcIpmiBoot.c
++  BmcConfigBootLib.c
+ 
+ [Packages]
+   MdePkg/MdePkg.dec
+   MdeModulePkg/MdeModulePkg.dec
++  IpmiFeaturePkg/IpmiFeaturePkg.dec
++  PurleyOpenBoardPkg/OpenBoardPkg.dec
+ 
+ [LibraryClasses]
+   DevicePathLib
+@@ -54,6 +57,9 @@
+   PlatformBootManagerLib
+   PcdLib
+   PrintLib
++  IpmiCommandLib
++  IpmiBaseLib
++  SerialPortLib
+ 
+ [Guids]
+   gEfiGlobalVariableGuid                        ## SOMETIMES_PRODUCES ## Variable:L"BootNext" (The number of next boot option)
+@@ -74,12 +80,14 @@
+   gConnectConInEventGuid                        ## SOMETIMES_CONSUMES ## Event
+   gEdkiiStatusCodeDataTypeVariableGuid          ## SOMETIMES_CONSUMES ## GUID
+   gEfiEventReadyToBootGuid                      ## CONSUMES           ## Event
++  gOemBootVariableGuid
+ 
+ [Protocols]
+   gEfiBdsArchProtocolGuid                       ## PRODUCES
+   gEfiSimpleTextInputExProtocolGuid             ## CONSUMES
+   gEdkiiVariablePolicyProtocolGuid              ## SOMETIMES_CONSUMES
+   gEfiDeferredImageLoadProtocolGuid             ## CONSUMES
++  gEfiDevicePathToTextProtocolGuid
+ 
+ [FeaturePcd]
+   gEfiMdePkgTokenSpaceGuid.PcdUefiVariableDefaultLangDeprecate    ## CONSUMES
+diff --git a/Platform/Intel/PurleyOpenBoardPkg/Override/MdeModulePkg/Universal/BdsDxe/BdsEntry.c b/Platform/Intel/PurleyOpenBoardPkg/Override/MdeModulePkg/Universal/BdsDxe/BdsEntry.c
+index d252867318..195b1d51e6 100644
+--- a/Platform/Intel/PurleyOpenBoardPkg/Override/MdeModulePkg/Universal/BdsDxe/BdsEntry.c
++++ b/Platform/Intel/PurleyOpenBoardPkg/Override/MdeModulePkg/Universal/BdsDxe/BdsEntry.c
+@@ -656,6 +656,11 @@ BdsFormalizeEfiGlobalVariable (
+   BdsFormalizeOSIndicationVariable ();
+ }
+ 
++VOID
++EFIAPI
++HandleBmcBootType(
++VOID);
++
+ /**
+ 
+   Service routine for BdsInstance->Entry(). Devices are connected, the
+@@ -956,6 +961,16 @@ BdsEntry (
+     OsIndication = 0;
+   }
+ 
++  HandleBmcBootType();
++  DataSize = sizeof (UINT16);
++  GetEfiGlobalVariable2 (EFI_BOOT_NEXT_VARIABLE_NAME, (VOID **)&BootNext, &DataSize);
++  if (DataSize != sizeof (UINT16)) {
++     if (BootNext != NULL) {
++        FreePool (BootNext);
++     }
++     BootNext = NULL;
++  }
++
+   DEBUG_CODE_BEGIN ();
+   EFI_BOOT_MANAGER_LOAD_OPTION_TYPE  LoadOptionType;
+ 
+diff --git a/Platform/Intel/PurleyOpenBoardPkg/Override/MdeModulePkg/Universal/BdsDxe/BmcConfigBootLib.c b/Platform/Intel/PurleyOpenBoardPkg/Override/MdeModulePkg/Universal/BdsDxe/BmcConfigBootLib.c
+new file mode 100644
+index 0000000000..98af7de027
+--- /dev/null
++++ b/Platform/Intel/PurleyOpenBoardPkg/Override/MdeModulePkg/Universal/BdsDxe/BmcConfigBootLib.c
+@@ -0,0 +1,544 @@
++#include <Uefi.h>
++#include <Library/BaseLib.h>
++#include <Library/BaseMemoryLib.h>
++#include <Library/DebugLib.h>
++#include <Library/DevicePathLib.h>
++#include <Library/MemoryAllocationLib.h>
++#include <Library/PrintLib.h>
++#include <Library/UefiBootManagerLib.h>
++#include <Library/UefiBootServicesTableLib.h>
++#include <Library/UefiLib.h>
++#include <Library/UefiRuntimeServicesTableLib.h>
++#include <Guid/GlobalVariable.h>
++#include <Protocol/DevicePathToText.h>
++#include <IndustryStandard/Ipmi.h>
++#include <Library/SerialPortLib.h>
++
++#define BOOT_OPTION_BOOT_FLAG_VALID         1
++#define BOOT_OPTION_BOOT_FLAG_INVALID       0
++
++typedef enum {
++	NoOverride = 0x0,
++	ForcePxe,
++	ForceDefaultHardDisk,
++	ForceDefaultHardDiskSafeMode,
++	ForceDefaultDiagnosticPartition,
++	ForceDefaultCD,
++	ForceSetupUtility,
++	ForceRemoteRemovableMedia,
++	ForceRemoteCD,
++	ForcePrimaryRemoteMedia,
++	ForceRemoteHardDisk = 0xB,
++	ForcePrimaryRemovableMedia = 0xF
++} BOOT_DEVICE_SELECTOR;
++
++//
++// Get System Boot Option data structure
++//
++typedef struct {
++	UINT8 ParameterSelector :7;
++	UINT8 ParameterValid :1;
++
++	//
++	// Boot Flags Data 1
++	//
++	UINT8 Reserved2 :5;
++	UINT8 BiosBootType :1;
++	UINT8 Persistent :1;
++	UINT8 BootFlagsValid :1;
++	//
++	// Boot Flags Data 2
++	//
++	UINT8 LockResetBtn :1;
++	UINT8 ScreenBlank :1;
++	UINT8 BootDeviceSelector :4;
++	UINT8 LockKeyboard :1;
++	UINT8 ClearCmos :1;
++	//
++	// Boot Flags Data 3
++	//
++	UINT8 ConsoleRedirectionControl :2;
++	UINT8 LockSleepBtn :1;
++	UINT8 UserPasswordByPass :1;
++	UINT8 Reserved3 :1;
++	UINT8 FirmwareVerbosity :2;
++	UINT8 LockPowerBtn :1;
++	//
++	// Boot Flags Data 4
++	//
++	UINT8 MuxControlOverride :3;
++	UINT8 ShareModeOverride :1;
++	UINT8 Reserved4 :4;
++	//
++	// Boot Flags Data 5
++	//
++	UINT8 DeviceInstanceSelector :5;
++	UINT8 Reserved5 :3;
++} IPMI_GET_BOOT_OPTION;
++
++EFI_STATUS
++EFIAPI
++ProcessIpmiBootOptions(UINT8 *Data);
++
++EFI_STATUS
++EFIAPI
++IpmiCmdSetSysBootOptions( OUT IPMI_GET_BOOT_OPTION *BootOption) {
++	return EFI_SUCCESS;
++}
++
++EFI_STATUS
++EFIAPI
++IpmiCmdGetSysBootOptions( IN IPMI_GET_BOOT_OPTION *BootOption) {
++	return (ProcessIpmiBootOptions((UINT8*) BootOption));
++}
++
++STATIC
++UINT16
++EFIAPI
++GetBBSTypeFromFileSysPath( IN CHAR16 *UsbPathTxt, IN CHAR16 *FileSysPathTxt,
++		IN EFI_DEVICE_PATH_PROTOCOL *FileSysPath) {
++	EFI_DEVICE_PATH_PROTOCOL *Node;
++
++	if (StrnCmp(UsbPathTxt, FileSysPathTxt, StrLen(UsbPathTxt)) == 0) {
++		Node = FileSysPath;
++		while (!IsDevicePathEnd(Node)) {
++			if ((DevicePathType(Node) == MEDIA_DEVICE_PATH)
++					&& (DevicePathSubType(Node) == MEDIA_CDROM_DP)) {
++				return BBS_TYPE_CDROM;
++			}
++			Node = NextDevicePathNode(Node);
++		}
++	}
++
++	return BBS_TYPE_UNKNOWN;
++}
++
++STATIC
++UINT16
++EFIAPI
++GetBBSTypeFromUsbPath(
++IN CONST EFI_DEVICE_PATH_PROTOCOL *UsbPath) {
++	EFI_STATUS Status;
++	EFI_HANDLE *FileSystemHandles;
++	UINTN NumberFileSystemHandles;
++	UINTN Index;
++	EFI_DEVICE_PATH_PROTOCOL *FileSysPath;
++	EFI_DEVICE_PATH_TO_TEXT_PROTOCOL *DevPathToText;
++	CHAR16 *UsbPathTxt;
++	CHAR16 *FileSysPathTxt;
++	UINT16 Result;
++
++	Status = gBS->LocateProtocol(&gEfiDevicePathToTextProtocolGuid,
++	NULL, (VOID**) &DevPathToText);
++	ASSERT_EFI_ERROR(Status);
++
++	Result = BBS_TYPE_UNKNOWN;
++	UsbPathTxt = DevPathToText->ConvertDevicePathToText(UsbPath, TRUE, TRUE);
++	if (UsbPathTxt == NULL) {
++		return Result;
++	}
++
++	Status = gBS->LocateHandleBuffer(ByProtocol,
++			&gEfiSimpleFileSystemProtocolGuid,
++			NULL, &NumberFileSystemHandles, &FileSystemHandles);
++	if (EFI_ERROR(Status)) {
++		DEBUG(
++				(DEBUG_ERROR, "Locate SimpleFileSystemProtocol error(%r)\n", Status));
++		FreePool(UsbPathTxt);
++		return BBS_TYPE_UNKNOWN;
++	}
++
++	for (Index = 0; Index < NumberFileSystemHandles; Index++) {
++		FileSysPath = DevicePathFromHandle(FileSystemHandles[Index]);
++		FileSysPathTxt = DevPathToText->ConvertDevicePathToText(FileSysPath,
++				TRUE, TRUE);
++
++		if (FileSysPathTxt == NULL) {
++			continue;
++		}
++
++		Result = GetBBSTypeFromFileSysPath(UsbPathTxt, FileSysPathTxt,
++				FileSysPath);
++		FreePool(FileSysPathTxt);
++
++		if (Result != BBS_TYPE_UNKNOWN) {
++			break;
++		}
++	}
++
++	if (NumberFileSystemHandles != 0) {
++		FreePool(FileSystemHandles);
++	}
++
++	FreePool(UsbPathTxt);
++
++	return Result;
++}
++
++STATIC
++UINT16
++EFIAPI
++GetBBSTypeFromMessagingDevicePath( IN EFI_DEVICE_PATH_PROTOCOL *DevicePath,
++		IN EFI_DEVICE_PATH_PROTOCOL *Node) {
++	VENDOR_DEVICE_PATH *Vendor;
++	UINT16 Result;
++
++	Result = BBS_TYPE_UNKNOWN;
++
++	switch (DevicePathSubType(Node)) {
++	case MSG_MAC_ADDR_DP:
++		Result = BBS_TYPE_EMBEDDED_NETWORK;
++		break;
++
++	case MSG_USB_DP:
++		Result = GetBBSTypeFromUsbPath(DevicePath);
++		if (Result == BBS_TYPE_UNKNOWN) {
++			Result = BBS_TYPE_USB;
++		}
++		break;
++
++	case MSG_SATA_DP:
++		Result = BBS_TYPE_HARDDRIVE;
++		break;
++
++	case MSG_NVME_NAMESPACE_DP:
++		Result = BBS_TYPE_HARDDRIVE;
++		break;
++
++	case MSG_VENDOR_DP:
++		Vendor = (VENDOR_DEVICE_PATH*) (Node);
++		if (&Vendor->Guid != NULL) {
++			if (CompareGuid(&Vendor->Guid, &((EFI_GUID )
++							DEVICE_PATH_MESSAGING_SAS ))) {
++				Result = BBS_TYPE_HARDDRIVE;
++			}
++		}
++		break;
++
++	default:
++		Result = BBS_TYPE_UNKNOWN;
++		break;
++	}
++//BBS_TYPE_FLOPPY
++	return Result;
++}
++
++STATIC
++UINT16
++EFIAPI
++GetBBSTypeByDevicePath( IN EFI_DEVICE_PATH_PROTOCOL *DevicePath) {
++	EFI_DEVICE_PATH_PROTOCOL *Node;
++	UINT16 Result;
++
++	Result = BBS_TYPE_UNKNOWN;
++	if (DevicePath == NULL) {
++		return Result;
++	}
++
++	Node = DevicePath;
++	while (!IsDevicePathEnd(Node)) {
++		switch (DevicePathType(Node)) {
++		case MEDIA_DEVICE_PATH:
++			if (DevicePathSubType(Node) == MEDIA_CDROM_DP) {
++				Result = BBS_TYPE_CDROM;
++			}
++			break;
++
++		case MESSAGING_DEVICE_PATH:
++			Result = GetBBSTypeFromMessagingDevicePath(DevicePath, Node);
++			break;
++
++		default:
++			Result = BBS_TYPE_UNKNOWN;
++			break;
++		}
++
++		if (Result != BBS_TYPE_UNKNOWN) {
++			break;
++		}
++
++		Node = NextDevicePathNode(Node);
++	}
++
++	return Result;
++}
++
++STATIC
++EFI_STATUS
++EFIAPI
++GetBmcBootOptionsSetting( OUT IPMI_GET_BOOT_OPTION *BmcBootOpt) {
++	EFI_STATUS Status;
++	UINT8 *ptr;
++
++	Status = IpmiCmdGetSysBootOptions(BmcBootOpt);
++	if (EFI_ERROR(Status)) {
++		DEBUG((DEBUG_ERROR, "Get iBMC BootOpts %r!\n", Status));
++		return Status;
++	}
++	ptr = (UINT8*) BmcBootOpt;
++	DEBUG(
++			(DEBUG_INFO, "0x%02x 0x%02x 0x%02x 0x%02x 0x%02x 0x%02x\n", ptr[0], ptr[1], ptr[2], ptr[3], ptr[4], ptr[5]));
++	DEBUG(
++			(DEBUG_INFO, "BmcBootOpt->BootFlagsValid = %d\n", BmcBootOpt->BootFlagsValid));
++
++	if (BmcBootOpt->BootFlagsValid != BOOT_OPTION_BOOT_FLAG_VALID) {
++		return EFI_NOT_FOUND;
++	}
++	DEBUG(
++			(DEBUG_INFO, "BmcBootOpt->Persistent = %d\n", BmcBootOpt->Persistent));
++	if (BmcBootOpt->Persistent) {
++		BmcBootOpt->BootFlagsValid = BOOT_OPTION_BOOT_FLAG_VALID;
++	} else {
++		BmcBootOpt->BootFlagsValid = BOOT_OPTION_BOOT_FLAG_INVALID;
++	}
++
++	Status = IpmiCmdSetSysBootOptions(BmcBootOpt);
++	if (EFI_ERROR(Status)) {
++		DEBUG((DEBUG_ERROR, "Set iBMC BootOpts %r!\n", Status));
++	}
++
++	return Status;
++}
++
++VOID
++EFIAPI
++RestoreBootOrder (
++  VOID
++  )
++{
++  EFI_STATUS                Status;
++  UINT16                    *BootOrder;
++  UINTN                     BootOrderSize;
++
++  GetVariable2 (
++    L"BootOrderBackup",
++    &gOemBootVariableGuid,
++    (VOID **) &BootOrder,
++    &BootOrderSize
++    );
++  if (BootOrder == NULL) {
++    return ;
++  }
++
++  Print (L"\nRestore BootOrder(%d).\n", BootOrderSize / sizeof (UINT16));
++
++  Status = gRT->SetVariable (
++                  L"BootOrder",
++                  &gEfiGlobalVariableGuid,
++                  EFI_VARIABLE_BOOTSERVICE_ACCESS | EFI_VARIABLE_RUNTIME_ACCESS
++                  | EFI_VARIABLE_NON_VOLATILE,
++                  BootOrderSize,
++                  BootOrder
++                  );
++  if (EFI_ERROR (Status)) {
++    DEBUG ((DEBUG_ERROR, "SetVariable BootOrder %r!\n", Status));
++  }
++
++  Status = gRT->SetVariable (
++                  L"BootOrderBackup",
++                  &gOemBootVariableGuid,
++                  EFI_VARIABLE_BOOTSERVICE_ACCESS | EFI_VARIABLE_NON_VOLATILE,
++                  0,
++                  NULL
++                  );
++  if (EFI_ERROR (Status)) {
++    DEBUG ((DEBUG_ERROR, "SetVariable BootOrderBackup %r!\n", Status));
++  }
++
++  FreePool (BootOrder);
++}
++
++STATIC
++VOID
++EFIAPI
++RestoreBootOrderOnReadyToBoot (
++  IN EFI_EVENT        Event,
++  IN VOID             *Context
++  )
++{
++  // restore BootOrder variable in normal condition.
++  RestoreBootOrder ();
++}
++
++STATIC
++VOID
++EFIAPI
++UpdateBootOrder (
++  IN UINT16  *NewOrder,
++  IN UINT16  *BootOrder,
++  IN UINTN   BootOrderSize
++  )
++{
++  EFI_STATUS  Status;
++  EFI_EVENT   Event;
++
++  Status = gRT->SetVariable (
++                  L"BootOrderBackup",
++                  &gOemBootVariableGuid,
++                  EFI_VARIABLE_BOOTSERVICE_ACCESS | EFI_VARIABLE_NON_VOLATILE,
++                  BootOrderSize,
++                  BootOrder
++                  );
++  if (EFI_ERROR (Status)) {
++    DEBUG ((DEBUG_ERROR, "Set BootOrderBackup Variable:%r!\n", Status));
++    return;
++  }
++
++  Status = gRT->SetVariable (
++                  L"BootOrder",
++                  &gEfiGlobalVariableGuid,
++                  EFI_VARIABLE_BOOTSERVICE_ACCESS | EFI_VARIABLE_RUNTIME_ACCESS
++                  | EFI_VARIABLE_NON_VOLATILE,
++                  BootOrderSize,
++                  NewOrder
++                  );
++  if (EFI_ERROR (Status)) {
++    DEBUG ((DEBUG_ERROR, "Set BootOrder Variable:%r!\n", Status));
++    return;
++  }
++
++  // Register notify function to restore BootOrder variable on ReadyToBoot Event.
++  Status = gBS->CreateEventEx (
++                  EVT_NOTIFY_SIGNAL,
++                  TPL_CALLBACK,
++                  RestoreBootOrderOnReadyToBoot,
++                  NULL,
++                  &gEfiEventReadyToBootGuid,
++                  &Event
++                  );
++  if (EFI_ERROR (Status)) {
++    DEBUG ((DEBUG_ERROR, "Create ready to boot event %r!\n", Status));
++  }
++}
++
++extern BOOLEAN
++BmIsBootManagerMenuFilePath (
++  EFI_DEVICE_PATH_PROTOCOL  *DevicePath
++  )
++;
++
++STATIC
++VOID
++EFIAPI
++SetBootOrder(IN UINT16 BootType) {
++	EFI_STATUS Status;
++	UINT16 *NewOrder;
++	UINT16 *RemainBoots;
++	UINT16 *BootOrder = NULL;
++	UINTN BootOrderSize = 0x100;
++	EFI_BOOT_MANAGER_LOAD_OPTION Option;
++	CHAR16 OptionName[sizeof("Boot####")];
++	UINTN Index;
++	UINTN SelectCnt;
++	UINTN RemainCnt;
++
++	Status = GetEfiGlobalVariable2(L"BootOrder", (VOID**) &BootOrder, &BootOrderSize);
++    if (Status != EFI_SUCCESS) {
++		return;
++	}
++
++	NewOrder = AllocatePool(BootOrderSize);
++	RemainBoots = AllocatePool(BootOrderSize);
++	if ((NewOrder == NULL) || (RemainBoots == NULL)) {
++		DEBUG((DEBUG_ERROR, "Out of resources."));
++		goto Exit;
++	}
++
++	SelectCnt = 0;
++	RemainCnt = 0;
++
++	for (Index = 0; Index < BootOrderSize / sizeof(UINT16); Index++) {
++		UnicodeSPrint(OptionName, sizeof(OptionName), L"Boot%04x",
++				BootOrder[Index]);
++		DEBUG((DEBUG_INFO, "%s, BootOrder[%d] = %x\n", OptionName, Index, BootOrder[Index]));
++		Status = EfiBootManagerVariableToLoadOption(OptionName, &Option);
++		if (EFI_ERROR(Status)) {
++			DEBUG((DEBUG_ERROR, "Boot%04x is invalid option!\n", BootOrder[Index]));
++			continue;
++		}
++
++		DEBUG((DEBUG_INFO, "GetBBSTypeByDevicePath(Option.FilePath) = %d, BootOption.Description = %s\n", GetBBSTypeByDevicePath(Option.FilePath), Option.Description));
++
++		if ((GetBBSTypeByDevicePath(Option.FilePath) == BootType) || (BmIsBootManagerMenuFilePath (Option.FilePath) && (BootType == 0x55) && (StrStr(Option.Description, (CHAR16 *)L"Enter Setup")))) {
++			NewOrder[SelectCnt++] = BootOrder[Index];
++		} else {
++			RemainBoots[RemainCnt++] = BootOrder[Index];
++		}
++	}
++	DEBUG((DEBUG_INFO, "SetBootOrder, SelectCnt = %d\n", SelectCnt));
++	if (SelectCnt != 0) {
++		if(BootType == 0x55) {
++			Status = gRT->SetVariable(L"BootNext", &gEfiGlobalVariableGuid,
++			   EFI_VARIABLE_BOOTSERVICE_ACCESS | EFI_VARIABLE_RUNTIME_ACCESS
++			   | EFI_VARIABLE_NON_VOLATILE, 2, &NewOrder[0]);
++		    if (EFI_ERROR(Status)) {
++		        DEBUG((DEBUG_ERROR, "Set BootNext Variable:%r!\n", Status));
++				return;
++		    }
++			goto Exit;
++		}
++
++		// append RemainBoots to NewOrder
++		for (Index = 0; Index < RemainCnt; Index++) {
++			NewOrder[SelectCnt + Index] = RemainBoots[Index];
++		}
++
++		if (CompareMem(NewOrder, BootOrder, BootOrderSize) != 0) {
++			DEBUG((DEBUG_INFO, "UpdateBootOrder, BootOrderSize = %d\n", BootOrderSize));
++			UpdateBootOrder(NewOrder, BootOrder, BootOrderSize);
++		}
++	}
++
++	Exit:
++	if (NewOrder != NULL) {
++		FreePool(NewOrder);
++	}
++	if (RemainBoots != NULL) {
++		FreePool(RemainBoots);
++	}
++}
++
++VOID
++EFIAPI
++HandleBmcBootType(
++VOID
++) {
++	EFI_STATUS Status;
++	IPMI_GET_BOOT_OPTION BmcBootOpt;
++	UINT16 BootType;
++
++	Status = GetBmcBootOptionsSetting(&BmcBootOpt);
++	if (EFI_ERROR(Status)) {
++		return;
++	}
++
++	DEBUG((DEBUG_INFO, "Boot Type from BMC is %x\n", BmcBootOpt.BootDeviceSelector));
++
++	switch (BmcBootOpt.BootDeviceSelector) {
++	case ForcePxe:
++		BootType = BBS_TYPE_EMBEDDED_NETWORK;
++		break;
++
++	case ForcePrimaryRemovableMedia:
++		BootType = BBS_TYPE_USB;
++		break;
++
++	case ForceDefaultHardDisk:
++		BootType = BBS_TYPE_HARDDRIVE;
++		break;
++
++	case ForceDefaultCD:
++		BootType = BBS_TYPE_CDROM;
++		break;
++
++	case ForceSetupUtility:
++		BootType = 0x55;
++		break;
++
++	default:
++		return;
++	}
++
++	SetBootOrder(BootType);
++}
++
+diff --git a/Platform/Intel/PurleyOpenBoardPkg/Override/MdeModulePkg/Universal/BdsDxe/BmcIpmiBoot.c b/Platform/Intel/PurleyOpenBoardPkg/Override/MdeModulePkg/Universal/BdsDxe/BmcIpmiBoot.c
+new file mode 100644
+index 0000000000..f33c496e6d
+--- /dev/null
++++ b/Platform/Intel/PurleyOpenBoardPkg/Override/MdeModulePkg/Universal/BdsDxe/BmcIpmiBoot.c
+@@ -0,0 +1,131 @@
++#include <Uefi.h>
++#include <Library/BaseLib.h>
++#include <Library/DebugLib.h>
++#include <Library/UefiBootServicesTableLib.h>
++#include <Library/DevicePathLib.h>
++#include <Library/IpmiBaseLib.h>
++#include <IndustryStandard/IpmiNetFnChassis.h>
++
++EFI_STATUS
++ClearBootOptions(
++   UINT8 *ResponseData
++  )
++{
++    EFI_STATUS Status;
++    UINT8 RequestData[6];
++    UINT32 ResponseDataSize;
++
++    RequestData[0] = IPMI_BOOT_OPTIONS_PARAMETER_BOOT_FLAGS;
++
++    RequestData[1] = ResponseData[3];
++    RequestData[2] = ResponseData[4];
++    RequestData[3] = ResponseData[5];
++    RequestData[4] = ResponseData[6];
++    RequestData[5] = ResponseData[7];
++
++    ResponseDataSize = 1;
++
++    Status = IpmiSubmitCommand(IPMI_NETFN_CHASSIS,
++       IPMI_CHASSIS_SET_SYSTEM_BOOT_OPTIONS,
++       RequestData, sizeof (RequestData), ResponseData, &ResponseDataSize);
++
++	if (EFI_ERROR(Status)) {
++	    DEBUG((DEBUG_ERROR, "Clear Boot Options failed. Status failed: %r\n",
++		   Status));
++		return Status;
++	}
++
++    return EFI_SUCCESS;
++}
++
++EFI_STATUS
++EFIAPI
++GetBootOptions (
++   UINT8 *ResponseData
++   )
++{
++    EFI_STATUS Status;
++    UINT8 RequestData[3];
++    UINT32 ResponseDataSize;
++
++    DEBUG((DEBUG_INFO, "Getting Boot Options\n"));
++
++    RequestData [0] = IPMI_BOOT_OPTIONS_PARAMETER_BOOT_FLAGS;
++    RequestData [1] = 0x00;
++    RequestData [2] = 0x00;
++
++    ResponseDataSize = 8;
++
++    Status = IpmiSubmitCommand(IPMI_NETFN_CHASSIS,
++    	IPMI_CHASSIS_GET_SYSTEM_BOOT_OPTIONS,
++	    RequestData, sizeof (RequestData), ResponseData, &ResponseDataSize);
++
++    if (EFI_ERROR (Status)) {
++        DEBUG((DEBUG_ERROR,"Getting Boot Options failed (%r)\n", Status));
++        goto Done;
++    }
++
++    DEBUG((DEBUG_INFO,"(%r)\n", Status));
++
++    if (ResponseDataSize < 8) {
++	    DEBUG((DEBUG_ERROR,"Getting response from BMC failed (%d bytes)\n", ResponseDataSize));
++        Status = EFI_TIMEOUT;
++        goto Done;
++    }
++
++    if (ResponseData [2] != IPMI_BOOT_OPTIONS_PARAMETER_BOOT_FLAGS) {
++	    DEBUG((DEBUG_INFO,"Getting parameter from BMC failed. Valid parameter is 0x%02x\n", ResponseData [2]));
++        Status = EFI_TIMEOUT;
++        goto Done;
++    }
++
++Done:
++    DEBUG((DEBUG_INFO, "(%r)\n", Status));
++    return Status;
++}
++
++EFI_STATUS
++EFIAPI
++ProcessIpmiBootOptions (
++		UINT8 *Data
++   )
++{
++    EFI_STATUS Status;
++    UINT8 ResponseData [8];
++
++    DEBUG ((DEBUG_INFO, "Process Ipmi Boot Options\n"));
++
++    Status = GetBootOptions (ResponseData);
++
++    if (EFI_ERROR (Status)) {
++        goto Done;
++    }
++
++    Data[0] = ResponseData[2];
++    Data[1] = ResponseData[3];
++    Data[2] = ResponseData[4];
++    Data[3] = ResponseData[5];
++    Data[4] = ResponseData[6];
++    Data[5] = ResponseData[7];
++
++    if ((Data [1] & (1 << 7)) == 0) {
++        DEBUG((DEBUG_INFO, "No valid boot flags\n"));
++        goto Done;
++    }
++
++    if ((Data [1] & (1 << 6)) == 0) {
++    	DEBUG((DEBUG_INFO, "One boot\n"));
++        ResponseData[3] &= ~ BIT7;
++        ResponseData[4] &= ~ (BIT5 | BIT4 | BIT3 | BIT2);
++        ClearBootOptions (ResponseData);
++       }
++    else {
++    	DEBUG((DEBUG_INFO, "Persistent boot\n"));
++    }
++
++Done:
++
++    DEBUG((DEBUG_INFO, "(%r)\n", Status));
++
++    return Status;
++}
+-- 
+2.38.1.windows.1
+
