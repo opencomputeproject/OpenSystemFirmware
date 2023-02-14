@@ -1,0 +1,18 @@
+This software and associated documentation files (the "Software") are contributed to the
+Open Compute Project and are subject to the license terms of the Open Compute Project
+(OCP) Software Contributor License Agreement listed at the following address:
+https://www.opencompute.org/documents/software-contributor-license-agreement.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
+FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS
+OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
+WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+The Software incorporates third-party software listed below. The provisions contained in each
+such license apply only to the respective third-party software.
+
+1.      EDK2 (https://github.com/tianocore/edk2/blob/master/License.txt)
+2.      Intel microcode (https://github.com/tianocore/edk2-non-osi/blob/master/Silicon/Intel/PurleySiliconBinPkg/Microcode/IntelMicrocodeLicense.txt)
+3.      Intel FV binaries (https://github.com/tianocore/edk2-non-osi/blob/master/Silicon/Intel/PurleySiliconBinPkg/FV/License.txt)
